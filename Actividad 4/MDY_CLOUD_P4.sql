@@ -157,3 +157,23 @@ WHERE
   COMUNA.NOMBRE_COMUNA IN('María Pinto', 'Curacaví', 'El Monte', 'Paine', 'Pirque')
 ORDER BY
   APPATERNO_EMP ASC;
+
+  -- Caso 6
+
+SELECT 
+  EXTRACT(YEAR FROM SYSDATE)
+    AS "AÑO TRIBUTARIO",
+  TO_CHAR(NUMRUN_EMP, '99,999,999')
+  || '-'
+  || DVRUN_EMP
+    AS "RUN EMPLEADO",
+  PNOMBRE_EMP
+  || ' '
+  || SNOMBRE_EMP
+  || ' '
+  || APPATERNO_EMP
+  || ' '
+  || APMATERNO_EMP
+    AS "NOMBRE EMPLEADO"
+FROM
+  EMPLEADO;
