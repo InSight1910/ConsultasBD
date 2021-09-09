@@ -1,0 +1,104 @@
+SELECT
+    TO_CHAR(numrun_cli,'09G999G999')|| '-' || dvrun_cli AS "RUN EMPLEADO",
+    appaterno_cli
+    || ' '
+    || substr(apmaterno_cli, 1,1) || '.'
+    || ' '
+    || pnombre_cli AS "NOMBRE CLIENTE",
+    direccion,
+    NVL(to_char(fono_fijo_cli), 'NO POSEE TELEFONO FIJO')
+        AS "TELEFONO FIJO",
+    NVL(to_char(celular_cli), 'NO POSEE CELULAR')
+        AS "CELULAR",
+    id_comuna
+        AS "COMUNA"
+FROM
+    cliente
+ORDER BY
+    &order;
+    
+-- Caso 2
+
+SELECT
+    'El empleado '
+    || pnombre_emp
+    || ' '
+    || appaterno_emp
+    || ' '
+    || apmaterno_emp
+    || ' estuvo de cumpleañs el '
+    || EXTRACT(DAY FROM fecha_nac)
+    || ' de '
+    || INITCAP(TO_CHAR(fecha_nac,'MONTH'))
+    || '. Cumplio '
+    || (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM fecha_nac))
+    || ' años'
+        AS "LISTADO DE CUMPLEAÑOS"
+FROM
+    empleado
+ORDER BY
+    fecha_nac DESC,
+    appaterno_emp ASC;
+    
+--CASO 3
+
+SELECT 
+    tipo_camion.nombre_tipo_camion
+        AS "TIPO CAMION",
+    camion.nro_patente,
+    camion.anio
+        AS "AÑO",
+    NVL(TO_CHAR(camion.valor_arriendo_dia, 'L99G999'), 0)
+        AS "VALOR ARRIENDO DIA",
+    NVL(TO_CHAR(camion.valor_garantia_dia, 'L999G999'), TO_CHAR(0, 'L9'))
+        AS "VALOR ARRIENDO DIA",
+    TO_CHAR((NVL(camion.valor_arriendo_dia, 0) + NVL(camion.valor_garantia_dia, 0)), 'L999G999')
+        AS "VALOR TOTAL DIA"
+FROM 
+    camion
+INNER JOIN
+    tipo_camion
+        ON camion.id_tipo_camion = tipo_camion.id_tipo_camion
+ORDER BY
+    tipo_camion.nombre_tipo_camion ASC,
+    camion.valor_arriendo_dia DESC,
+    camion.valor_garantia_dia ASC,
+    camion.nro_patente ASC;
+    
+-- Caso 4
+
+SELECT
+    TO_CHAR(SYSDATE, 'MM/YYYY')
+        AS "FECHA PROCESO",
+    TO_CHAR(numrun_emp, '09G999G999')
+    || '-'
+    || dvrun_emp
+        AS "RUN EMPLEADO",
+    pnombre_emp
+    || ' '
+    || snombre_emp
+    || ' '
+    || appaterno_emp
+    || ' '
+    || apmaterno_emp
+        AS "NOMBRE EMPLEADO",
+    TO_CHAR(sueldo_base, 'L9G999G999')
+        AS "SUELDO BASE",
+    CASE
+        WHEN sueldo_base BETWEEN 320000 and 450000 THEN
+            TO_CHAR((&&utilidades * 0.005), 'L999G999G999')
+        WHEN sueldo_base BETWEEN 450001 and 600000 THEN
+            TO_CHAR(&utilidades * 0.0035, 'L999G999G999')
+        WHEN sueldo_base BETWEEN 600001 and 900000 THEN
+            TO_CHAR(&utilidades * 0.0025, 'L999G999G999')
+        WHEN sueldo_base BETWEEN 900001 and 1800000 THEN
+            TO_CHAR(&utilidades * 0.0015, 'L999G999G999')
+        WHEN sueldo_base > 1800000 THEN
+            TO_CHAR(&utilidades * 0.001, 'L999G999G999')
+    END
+FROM 
+    empleado
+ORDER BY
+    appaterno_emp;
+    
+-- Caso 5
