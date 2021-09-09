@@ -26,14 +26,14 @@ SELECT
     || appaterno_emp
     || ' '
     || apmaterno_emp
-    || ' estuvo de cumpleaÒs el '
+    || ' estuvo de cumpleaÔøΩs el '
     || EXTRACT(DAY FROM fecha_nac)
     || ' de '
     || INITCAP(TO_CHAR(fecha_nac,'MONTH'))
     || '. Cumplio '
     || (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM fecha_nac))
-    || ' aÒos'
-        AS "LISTADO DE CUMPLEA—OS"
+    || ' aÔøΩos'
+        AS "LISTADO DE CUMPLEAÔøΩOS"
 FROM
     empleado
 ORDER BY
@@ -47,7 +47,7 @@ SELECT
         AS "TIPO CAMION",
     camion.nro_patente,
     camion.anio
-        AS "A—O",
+        AS "AÔøΩO",
     NVL(TO_CHAR(camion.valor_arriendo_dia, 'L99G999'), 0)
         AS "VALOR ARRIENDO DIA",
     NVL(TO_CHAR(camion.valor_garantia_dia, 'L999G999'), TO_CHAR(0, 'L9'))
@@ -102,3 +102,58 @@ ORDER BY
     appaterno_emp;
     
 -- Caso 5
+
+SELECT
+  NUMRUN_EMP
+  || '-'
+  || DVRUN_EMP
+    AS "RUN EMPLEADO",
+  PNOMBRE_EMP
+  || ' '
+  || SNOMBRE_EMP
+  || ' '
+  || APPATERNO_EMP
+  || ' '
+  || APMATERNO_EMP
+    AS "NOMBRE EMPLEADO",
+  (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM FECHA_CONTRATO))
+    AS "A√ëOS CONTRATADO",
+  TO_CHAR(SUELDO_BASE, 'L9G999G999')
+    AS "SUELDO BASE",
+  TO_CHAR(SUELDO_BASE * ((EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM FECHA_CONTRATO))/100), 'L999G999G999')
+    AS "VALOR MOVILIZACION",
+  CASE
+      WHEN SUELDO_BASE >= 450000 THEN
+        TO_CHAR((TRUNC(SUELDO_BASE) * (SUBSTR(SUELDO_BASE, 1,1) / 100)), 'L999G999')
+      ELSE
+        TO_CHAR((TRUNC(SUELDO_BASE) * (SUBSTR(SUELDO_BASE, 1,2) / 100)), 'L999G999')
+  END AS "BONIF. EXTRA MOVILIZACION",
+  CASE
+      WHEN SUELDO_BASE >= 450000 THEN
+        TO_CHAR(
+        (
+        SUELDO_BASE * ((EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM FECHA_CONTRATO))/100)
+        +
+        (TRUNC(SUELDO_BASE) * (SUBSTR(SUELDO_BASE, 1,1) / 100))
+        )
+        , 'L999G999G999')
+      ELSE
+        TO_CHAR(
+        (
+        SUELDO_BASE * ((EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM FECHA_CONTRATO))/100)
+        +
+        (TRUNC(SUELDO_BASE) * (SUBSTR(SUELDO_BASE, 1,2) / 100))
+        )
+        , 'L999G999G999')
+  END AS "TOTAL MOVILIZACION"
+  
+FROM
+  EMPLEADO
+INNER JOIN
+  COMUNA
+  ON
+    COMUNA.ID_COMUNA = EMPLEADO.ID_COMUNA
+WHERE
+  COMUNA.NOMBRE_COMUNA IN('Mar√≠a Pinto', 'Curacav√≠', 'El Monte', 'Paine', 'Pirque')
+ORDER BY
+  APPATERNO_EMP ASC;
