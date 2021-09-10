@@ -161,19 +161,46 @@ ORDER BY
   -- Caso 6
 
 SELECT 
-  EXTRACT(YEAR FROM SYSDATE)
-    AS "AÃ‘O TRIBUTARIO",
-  TO_CHAR(NUMRUN_EMP, '99,999,999')
-  || '-'
-  || DVRUN_EMP
-    AS "RUN EMPLEADO",
-  PNOMBRE_EMP
-  || ' '
-  || SNOMBRE_EMP
-  || ' '
-  || APPATERNO_EMP
-  || ' '
-  || APMATERNO_EMP
-    AS "NOMBRE EMPLEADO"
+    EXTRACT(YEAR FROM SYSDATE) -2 
+        AS "AÑO TRIBUTARIO",
+    TO_CHAR(NUMRUN_EMP, '99G999G999')
+    || '-'
+    || DVRUN_EMP
+        AS "RUN EMPLEADO",
+    PNOMBRE_EMP
+    || ' '
+    || SNOMBRE_EMP
+    || ' '
+    || APPATERNO_EMP
+    || ' '
+    || APMATERNO_EMP
+        AS "NOMBRE EMPLEADO",
+    (EXTRACT(YEAR FROM SYSDATE) -2 - EXTRACT(YEAR FROM fecha_contrato))
+        AS "AÃ‘OS TRABAJADOS",
+    sueldo_base
+        AS "SUELDO BASE MENSUAL",
+    sueldo_base * 12
+        AS "SUELDO BASE ANUAL",
+    ROUND(sueldo_base * ((EXTRACT(YEAR FROM SYSDATE) -2) - EXTRACT(YEAR FROM fecha_contrato)) / 100) * 12
+        AS "BONO POR AÑOS ANUAL",
+    ROUND((sueldo_base * 12 / 100) * 12)
+        AS "MOVILIZACION ANUAL",
+    ROUND((sueldo_base * 20 /100)) * 12
+        AS "COLACION ANUAL",
+    ROUND(
+        sueldo_base
+        +
+        (sueldo_base * (((EXTRACT(YEAR FROM SYSDATE) - 1) - EXTRACT(YEAR FROM fecha_contrato)) / 100))
+        +
+        sueldo_base * 0.12
+        +
+        sueldo_base * 0.2
+    ) * 12
+        AS "SUELDO BRUTO",
+        round(sueldo_base +
+        (sueldo_base * (((EXTRACT(YEAR FROM SYSDATE) -1) - EXTRACT(YEAR FROM fecha_contrato)) / 100))) * 12
+        AS "RENTA INPONIBLE ANUAL"
 FROM
-  EMPLEADO;
+  EMPLEADO
+ORDER BY
+    "RUN EMPLEADO" ASC;
