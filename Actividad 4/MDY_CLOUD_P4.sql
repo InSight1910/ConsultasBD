@@ -26,14 +26,14 @@ SELECT
     || appaterno_emp
     || ' '
     || apmaterno_emp
-    || ' estuvo de cumpleaï¿½s el '
+    || ' estuvo de cumplea?s el '
     || EXTRACT(DAY FROM fecha_nac)
     || ' de '
     || INITCAP(TO_CHAR(fecha_nac,'MONTH'))
     || '. Cumplio '
     || (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM fecha_nac))
-    || ' aï¿½os'
-        AS "LISTADO DE CUMPLEAï¿½OS"
+    || ' a?os'
+        AS "LISTADO DE CUMPLEA?OS"
 FROM
     empleado
 ORDER BY
@@ -47,7 +47,7 @@ SELECT
         AS "TIPO CAMION",
     camion.nro_patente,
     camion.anio
-        AS "Aï¿½O",
+        AS "A?O",
     NVL(TO_CHAR(camion.valor_arriendo_dia, 'L99G999'), 0)
         AS "VALOR ARRIENDO DIA",
     NVL(TO_CHAR(camion.valor_garantia_dia, 'L999G999'), TO_CHAR(0, 'L9'))
@@ -117,7 +117,7 @@ SELECT
   || APMATERNO_EMP
     AS "NOMBRE EMPLEADO",
   (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM FECHA_CONTRATO))
-    AS "AÃ‘OS CONTRATADO",
+    AS "AÑOS CONTRATADO",
   TO_CHAR(SUELDO_BASE, 'L9G999G999')
     AS "SUELDO BASE",
   TO_CHAR(SUELDO_BASE * ((EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM FECHA_CONTRATO))/100), 'L999G999G999')
@@ -154,11 +154,11 @@ INNER JOIN
   ON
     COMUNA.ID_COMUNA = EMPLEADO.ID_COMUNA
 WHERE
-  COMUNA.NOMBRE_COMUNA IN('MarÃ­a Pinto', 'CuracavÃ­', 'El Monte', 'Paine', 'Pirque')
+  COMUNA.NOMBRE_COMUNA IN('María Pinto', 'Curacaví', 'El Monte', 'Paine', 'Pirque')
 ORDER BY
   APPATERNO_EMP ASC;
-
-  -- Caso 6
+  
+-- Caso 6
 
 SELECT 
     EXTRACT(YEAR FROM SYSDATE) -2 
@@ -175,30 +175,31 @@ SELECT
     || ' '
     || APMATERNO_EMP
         AS "NOMBRE EMPLEADO",
-    (EXTRACT(YEAR FROM SYSDATE) -2 - EXTRACT(YEAR FROM fecha_contrato))
+    (EXTRACT(YEAR FROM TO_DATE('01/01/2020')) - EXTRACT(YEAR FROM fecha_contrato))
         AS "AÃ‘OS TRABAJADOS",
     sueldo_base
         AS "SUELDO BASE MENSUAL",
     sueldo_base * 12
         AS "SUELDO BASE ANUAL",
-    ROUND(sueldo_base * ((EXTRACT(YEAR FROM SYSDATE) -2) - EXTRACT(YEAR FROM fecha_contrato)) / 100) * 12
+    ROUND(sueldo_base * ((EXTRACT(YEAR FROM TO_DATE('01/02/2020')) - EXTRACT(YEAR FROM fecha_contrato)) / 100)) * 12
         AS "BONO POR AÑOS ANUAL",
     ROUND((sueldo_base * 12 / 100) * 12)
         AS "MOVILIZACION ANUAL",
     ROUND((sueldo_base * 20 /100)) * 12
         AS "COLACION ANUAL",
-    ROUND(
-        sueldo_base
-        +
-        (sueldo_base * (((EXTRACT(YEAR FROM SYSDATE) - 1) - EXTRACT(YEAR FROM fecha_contrato)) / 100))
-        +
-        sueldo_base * 0.12
-        +
-        sueldo_base * 0.2
-    ) * 12
-        AS "SUELDO BRUTO",
-        round(sueldo_base +
-        (sueldo_base * (((EXTRACT(YEAR FROM SYSDATE) -1) - EXTRACT(YEAR FROM fecha_contrato)) / 100))) * 12
+    (
+    (sueldo_base * 12)
+    +
+    (ROUND(sueldo_base * ((EXTRACT(YEAR FROM TO_DATE('01/02/2020')) - EXTRACT(YEAR FROM fecha_contrato)) / 100)) * 12)
+    +
+    ROUND((sueldo_base * 0.12) * 12)
+    +
+    (ROUND(sueldo_base * 0.2) * 12)
+    )
+        AS "SUELDO BRUTO ANUAL",
+   
+    round(sueldo_base +
+    (sueldo_base * ((EXTRACT(YEAR FROM TO_DATE('01/01/2020')) - EXTRACT(YEAR FROM fecha_contrato)) / 100))) * 12
         AS "RENTA INPONIBLE ANUAL"
 FROM
   EMPLEADO
