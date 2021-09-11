@@ -36,8 +36,10 @@ SELECT
         AS "LISTADO DE CUMPLEA?OS"
 FROM
     empleado
+WHERE
+    EXTRACT(MONTH FROM fecha_nac) = EXTRACT(MONTH FROM TO_DATE('01/08/2020')) -1
 ORDER BY
-    fecha_nac DESC,
+    EXTRACT(DAY FROM fecha_nac) ASC,
     appaterno_emp ASC;
     
 --CASO 3
@@ -161,7 +163,7 @@ ORDER BY
 -- Caso 6
 
 SELECT 
-    EXTRACT(YEAR FROM SYSDATE) -2 
+    EXTRACT(YEAR FROM SYSDATE) 
         AS "AÑO TRIBUTARIO",
     TO_CHAR(NUMRUN_EMP, '99G999G999')
     || '-'
@@ -175,13 +177,13 @@ SELECT
     || ' '
     || APMATERNO_EMP
         AS "NOMBRE EMPLEADO",
-    (EXTRACT(YEAR FROM TO_DATE('01/01/2020')) - EXTRACT(YEAR FROM fecha_contrato))
+    (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM fecha_contrato))
         AS "AÃ‘OS TRABAJADOS",
     sueldo_base
         AS "SUELDO BASE MENSUAL",
     sueldo_base * 12
         AS "SUELDO BASE ANUAL",
-    ROUND(sueldo_base * ((EXTRACT(YEAR FROM TO_DATE('01/02/2020')) - EXTRACT(YEAR FROM fecha_contrato)) / 100)) * 12
+    ROUND(sueldo_base * ((EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM fecha_contrato)) / 100)) * 12
         AS "BONO POR AÑOS ANUAL",
     ROUND((sueldo_base * 12 / 100) * 12)
         AS "MOVILIZACION ANUAL",
@@ -190,7 +192,7 @@ SELECT
     (
     (sueldo_base * 12)
     +
-    (ROUND(sueldo_base * ((EXTRACT(YEAR FROM TO_DATE('01/02/2020')) - EXTRACT(YEAR FROM fecha_contrato)) / 100)) * 12)
+    (ROUND(sueldo_base * ((EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM fecha_contrato)) / 100)) * 12)
     +
     ROUND((sueldo_base * 0.12) * 12)
     +
@@ -199,7 +201,7 @@ SELECT
         AS "SUELDO BRUTO ANUAL",
    
     round(sueldo_base +
-    (sueldo_base * ((EXTRACT(YEAR FROM TO_DATE('01/01/2020')) - EXTRACT(YEAR FROM fecha_contrato)) / 100))) * 12
+    (sueldo_base * ((EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM fecha_contrato)) / 100))) * 12
         AS "RENTA INPONIBLE ANUAL"
 FROM
   EMPLEADO
