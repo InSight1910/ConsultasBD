@@ -177,8 +177,14 @@ SELECT
     || ' '
     || APMATERNO_EMP
         AS "NOMBRE EMPLEADO",
+    CASE
+        WHEN EXTRACT(YEAR FROM fecha_contrato)=2020 THEN
+            ROUND((TO_DATE ('31/12/2020') - FECHA_CONTRATO)/30,1)
+        ELSE
+            ROUND(MONTHS_BETWEEN(TO_DATE('31/12/2020'), TO_DATE('01/01/2020')))
+    END AS "MESES TRABAJADOS EN EL ANNO",
     (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM fecha_contrato))
-        AS "AÑOS TRABAJADOS",
+        AS "ANNOS TRABAJADOS",
     sueldo_base
         AS "SUELDO BASE MENSUAL",
     sueldo_base * 12
