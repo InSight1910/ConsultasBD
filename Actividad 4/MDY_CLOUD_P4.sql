@@ -1,10 +1,10 @@
 SELECT
     TO_CHAR(numrun_cli,'09G999G999')|| '-' || dvrun_cli AS "RUN EMPLEADO",
-    appaterno_cli
+    INITCAP(appaterno_cli
     || ' '
     || substr(apmaterno_cli, 1,1) || '.'
     || ' '
-    || pnombre_cli AS "NOMBRE CLIENTE",
+    || pnombre_cli) AS "NOMBRE CLIENTE",
     direccion,
     NVL(to_char(fono_fijo_cli), 'NO POSEE TELEFONO FIJO')
         AS "TELEFONO FIJO",
@@ -53,7 +53,7 @@ SELECT
     NVL(TO_CHAR(camion.valor_arriendo_dia, 'L99G999'), 0)
         AS "VALOR ARRIENDO DIA",
     NVL(TO_CHAR(camion.valor_garantia_dia, 'L999G999'), TO_CHAR(0, 'L9'))
-        AS "VALOR ARRIENDO DIA",
+        AS "VALOR GARANTIA DIA",
     TO_CHAR((NVL(camion.valor_arriendo_dia, 0) + NVL(camion.valor_garantia_dia, 0)), 'L999G999')
         AS "VALOR TOTAL DIA"
 FROM 
@@ -63,7 +63,7 @@ INNER JOIN
         ON camion.id_tipo_camion = tipo_camion.id_tipo_camion
 ORDER BY
     tipo_camion.nombre_tipo_camion ASC,
-    camion.valor_arriendo_dia DESC,
+    "VALOR ARRIENDO DIA" DESC,
     camion.valor_garantia_dia ASC,
     camion.nro_patente ASC;
     
