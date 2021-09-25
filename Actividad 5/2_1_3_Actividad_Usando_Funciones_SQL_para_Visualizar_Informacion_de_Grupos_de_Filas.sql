@@ -114,12 +114,18 @@ SELECT
         AS "MES PRESTAMO"
     , COUNT(*)
         AS "TOTAL PRESTAMOS ATENDIDOS"
+    , COUNT(*) * 10000
+        AS "ASIGNACION POR PRESTAMOS"
 FROM
     prestamo
 WHERE
     EXTRACT(YEAR FROM fecha_ini_prestamo) = EXTRACT(YEAR FROM SYSDATE) - 1
 GROUP BY
     run_emp
-    , fecha_ini_prestamo
+    , TO_CHAR(fecha_ini_prestamo, 'MM/YYYY')
+HAVING
+    COUNT(*) >2
 order by
-    "MES PRESTAMO";
+    "MES PRESTAMO" ASC
+    , "ASIGNACION POR PRESTAMOS" DESC
+    , "RUN EMPLEADO" DESC;
