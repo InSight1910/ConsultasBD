@@ -14,7 +14,7 @@ GROUP BY
     carreraid
 ORDER BY
     "TOTAL ALUMNOS MATRICULADOS" DESC,
-    carreraid ASC;
+    carreraid DESC;
     
 -- Caso 2
 SELECT
@@ -32,15 +32,16 @@ ORDER BY
     carreraid ASC;
     
 -- Caso 3
-SELECT DISTINCT
+SELECT
     TO_CHAR(run_jefe, '09G999G999')
         AS "RUN JEFE SIN DV"
-    ,COUNT(*)
+    ,COUNT(run_jefe)
         AS "TOTAL DE EMPLEADOS A SU CARGO"
     ,MAX(salario)
         AS "SALARIO MAXIMO"
     , COUNT(*) * 10 ||
     '% del Salario Maximo'
+        AS "PORCENTAJE BONIFICACION"
     ,TO_CHAR(MAX(salario) * ((COUNT(*) * 10) / 100), 'L999G999G999')
         AS "BONIFICACION"
 FROM
@@ -51,7 +52,7 @@ GROUP BY
     run_jefe
 ORDER BY
     "TOTAL DE EMPLEADOS A SU CARGO" ASC;
-    
+
 -- Caso 4
 SELECT
     empleado.id_escolaridad
@@ -63,7 +64,7 @@ SELECT
     TO_CHAR(MAX(empleado.salario), 'L999G999G999')
         AS "SALARIO MAXIMO",
     TO_CHAR(MIN(empleado.salario), 'L999G999G999')
-        AS "SALARIO MAXIMO",
+        AS "SALARIO MINIMO",
     TO_CHAR(SUM(empleado.salario), 'L999G999G999')
         AS "SALARIO TOTAL",
     TO_CHAR(ROUND(AVG(empleado.salario)), 'L999G999G999')
