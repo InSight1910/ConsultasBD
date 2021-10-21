@@ -224,10 +224,8 @@ SELECT
         || cli.appaterno
         || ' '
         || cli.apmaterno)AS "NOMBRE CLIENTE"
-    ,   case
-        when tm.cod_tipo_mov = 1 THEN
-            mv.monto_movimiento
-    end as "x"
+    , NVL2(NULLIF(tm.cod_tipo_mov , 1), 'NO REALIZO', mv.monto_movimiento) as "ABONOS"
+	, NVL2(NULLIF(tm.cod_tipo_mov , 2), 'NO REALIZO', mv.monto_movimiento) as "RESCATE"
 FROM
     cliente cli
 INNER JOIN
@@ -237,6 +235,8 @@ INNER JOIN
     tipo_movimiento tm
         ON mv.cod_tipo_mov = tm.cod_tipo_mov
 GROUP BY
+	TO_CHAR(cli.numrun, '09G999G999')
+        || '-' || UPPER(cli.dvrun),
     cli.nro_cliente,
     cli.pnombre,
     cli.snombre,
