@@ -90,14 +90,52 @@ WHERE
 				WHERE
 					EXTRACT(YEAR FROM SYSDATE)-1 = EXTRACT(YEAR FROM ate.fecha_atencion)
 				HAVING
-					COUNT(ate.ate_id) < 10
+					COUNT(ate.ate_id) <= 10
 				GROUP BY
 					ate.med_run)
 ORDER BY
 	"ESPECIALIDAD",
 	"RUT";
 	
-	
+-- CASO 3
+
+SELECT
+	un.nombre
+		AS "UNIDAD",
+	UPPER(
+		md.pnombre || ' ' ||
+		md.snombre || ' ' ||
+		md.apaterno || ' ' ||
+		md.amaterno
+		)
+		AS "MEDICO",
+	md.telefono
+FROM
+	medico md
+INNER JOIN unidad un
+	ON (un.uni_id = md.uni_id)
+WHERE
+	md.med_run IN (
+		SELECT
+			ate.med_run AS "PAC_RUN"
+		FROM
+			atencion ate
+		WHERE
+			EXTRACT(YEAR FROM SYSDATE)-1 = EXTRACT(YEAR FROM ate.fecha_atencion)
+		HAVING
+			COUNT(ate.med_run) < (
+								SELECT
+									MAX(COUNT(ate.med_run)) AS "PAC_RUN"
+								FROM
+									atencion ate
+								WHERE
+									EXTRACT(YEAR FROM SYSDATE)-1 = EXTRACT(YEAR FROM ate.fecha_atencion)
+								GROUP BY
+									ate.med_run
+									)
+		GROUP BY
+			ate.med_run
+	);
 	
 	
 SELECT
@@ -107,6 +145,28 @@ FROM
 WHERE
 	EXTRACT(YEAR FROM SYSDATE)-1 = EXTRACT(YEAR FROM ate.fecha_atencion)
 HAVING
-	COUNT(ate.ate_id) < 10
+	COUNT(ate.med_run) < (
+						SELECT
+							MAX(COUNT(ate.med_run)) AS "PAC_RUN"
+						FROM
+							atencion ate
+						WHERE
+							EXTRACT(YEAR FROM SYSDATE)-1 = EXTRACT(YEAR FROM ate.fecha_atencion)
+						GROUP BY
+							ate.med_run
+							)
+GROUP BY
+	ate.med_run;
+	
+
+
+
+
+SELECT
+	MAX(COUNT(ate.med_run)) AS "PAC_RUN"
+FROM
+	atencion ate
+WHERE
+	EXTRACT(YEAR FROM SYSDATE)-1 = EXTRACT(YEAR FROM ate.fecha_atencion)
 GROUP BY
 	ate.med_run
