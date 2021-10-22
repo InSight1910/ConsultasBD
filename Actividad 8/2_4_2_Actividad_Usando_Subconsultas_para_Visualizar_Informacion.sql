@@ -69,10 +69,10 @@ SELECT
 	TO_CHAR(md.med_run, '09G999G999') || '-' || md.dv_run
 		AS "RUT",
 	UPPER(
-		md.pnombre || ' ' ||
-		md.snombre || ' ' ||
-		md.apaterno || ' ' ||
-		md.amaterno
+		md.pnombre --|| ' ' ||
+--		md.snombre || ' ' ||
+--		md.apaterno || ' ' ||
+--		md.amaterno
 		)
 			AS "MEDICO"
 FROM
@@ -82,20 +82,40 @@ INNER JOIN especialidad_medico em
 INNER JOIN especialidad es
 	ON (es.esp_id = em.esp_id)
 WHERE
-	md.med_run IN (
+	es.nombre IN (
 				SELECT
-					ate.med_run AS "PAC_RUN"
+					es.nombre
 				FROM
 					atencion ate
-				WHERE
-					EXTRACT(YEAR FROM SYSDATE)-1 = EXTRACT(YEAR FROM ate.fecha_atencion)
+				INNER JOIN especialidad_medico em
+					ON (em.med_run = ate.med_run)
+				INNER JOIN especialidad es
+					ON (es.esp_id = em.esp_id)
 				HAVING
-					COUNT(ate.ate_id) <= 10
+					COUNT(ate.esp_id) < 10
 				GROUP BY
-					ate.med_run)
+					ate.esp_id,es.nombre
+				)
 ORDER BY
 	"ESPECIALIDAD",
 	"RUT";
+	
+	
+	
+	
+	
+	
+SELECT
+	COUNT(ate.esp_id) AS "PAC_RUN"
+FROM
+	atencion ate
+WHERE
+	EXTRACT(YEAR FROM ate.fecha_atencion) = EXTRACT(YEAR FROM SYSDATE) -1
+GROUP BY
+	ate.esp_id
+HAVING
+	COUNT(ate.esp_id) < 10;
+	
 	
 -- CASO 3
 
@@ -135,7 +155,10 @@ WHERE
 									)
 		GROUP BY
 			ate.med_run
-	);
+	)
+ORDER BY
+	un.nombre,
+	md.apaterno;
 	
 	
 SELECT
@@ -158,15 +181,83 @@ HAVING
 GROUP BY
 	ate.med_run;
 	
-
-
-
-
+	
+-- CASO 4
+-- INFORME 1
 SELECT
-	MAX(COUNT(ate.med_run)) AS "PAC_RUN"
+	TO_CHAR(ate.fecha_atencion, 'YYYY/MM')
+		AS "AÑO Y MES",
+	COUNT(ate.ate_id)
+		AS "TOTAL ATENCIONES",
+	TO_CHAR(SUM(ate.costo), 'L999G999G999')
+		AS "VALOR TOTAL"
 FROM
 	atencion ate
 WHERE
-	EXTRACT(YEAR FROM SYSDATE)-1 = EXTRACT(YEAR FROM ate.fecha_atencion)
+	MONTHS_BETWEEN(SYSDATE, ate.fecha_atencion) BETWEEN MONTHS_BETWEEN(SYSDATE, ate.fecha_atencion) AND MONTHS_BETWEEN(SYSDATE, ADD_MONTHS(ate.fecha_atencion, -48))
+HAVING
+	COUNT(ate.ate_id) >= (
+			SELECT
+				ROUND(AVG(COUNT(ate.ate_id)))
+			FROM
+				atencion ate
+			GROUP BY 
+				TO_CHAR(ate.fecha_atencion, 'YYYY/MM')
+	)
 GROUP BY
-	ate.med_run
+	TO_CHAR(ate.fecha_atencion, 'YYYY/MM')
+ORDER BY
+	TO_CHAR(ate.fecha_atencion, 'YYYY/MM');
+	
+	
+-- INFORME 2
+SELECT
+	TO_CHAR(pac.pac_run, '09G999G999') || '-' || pac.dv_run
+		AS "RUN PACIENTE",
+	INITCAP(
+		pac.pnombre || ' ' ||
+		pac.snombre || ' ' ||
+		pac.apaterno || ' ' ||
+		pac.amaterno
+		) 
+			AS "NOMBRE PACIENTE",
+	ate.ate_id
+		AS "ID ATENCION",
+	TO_CHAR(pate.fecha_venc_pago, 'DD/MM/YYYY')
+		AS "FECHA VENCIMIENTO PAGO",
+	TO_CHAR(pate.fecha_pago, 'DD/MM/YYYY')
+		AS "FECHA PAGO",
+	pate.fecha_pago-pate.fecha_venc_pago
+		AS "DIAS MOROSOS",
+	TO_CHAR((pate.fecha_pago-pate.fecha_venc_pago) * 2000, 'L999G999G999')
+		AS "VALOR MULTA"
+FROM
+	paciente pac
+INNER JOIN atencion ate
+	ON (ate.pac_run = pac.pac_run)
+INNER JOIN pago_atencion pate
+	ON (pate.ate_id = ate.ate_id)
+WHERE
+	pate.fecha_pago-pate.fecha_venc_pago >= (
+		SELECT
+			MAX(ROUND(AVG(pate.fecha_pago - pate.fecha_venc_pago)))
+		FROM
+			pago_atencion pate
+		GROUP BY
+			EXTRACT(YEAR FROM pate.fecha_pago)
+	)
+GROUP BY
+	pac.pac_run,
+	pac.dv_run,
+	pac.pnombre,
+	pac.snombre,
+	pac.apaterno,
+	pac.amaterno,
+	ate.ate_id,
+	pate.fecha_venc_pago,
+	pate.fecha_pago;
+	
+SELECT
+	ROUND(AVG(pate.fecha_pago - pate.fecha_venc_pago))
+FROM
+	pago_atencion pate
