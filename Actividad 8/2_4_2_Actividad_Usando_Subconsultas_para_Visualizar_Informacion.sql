@@ -387,4 +387,4 @@ GROUP BY
 ORDER BY
     md.med_run,
     md.apaterno;
-undefine ganancias;
+-- undefine ganancias;
