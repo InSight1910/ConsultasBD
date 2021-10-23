@@ -69,10 +69,10 @@ SELECT
 	TO_CHAR(md.med_run, '09G999G999') || '-' || md.dv_run
 		AS "RUT",
 	UPPER(
-		md.pnombre --|| ' ' ||
---		md.snombre || ' ' ||
---		md.apaterno || ' ' ||
---		md.amaterno
+		md.pnombre || ' ' ||
+		md.snombre || ' ' ||
+		md.apaterno || ' ' ||
+		md.amaterno
 		)
 			AS "MEDICO"
 FROM
@@ -238,14 +238,7 @@ INNER JOIN atencion ate
 INNER JOIN pago_atencion pate
 	ON (pate.ate_id = ate.ate_id)
 WHERE
-	pate.fecha_pago-pate.fecha_venc_pago >= (
-		SELECT
-			MAX(ROUND(AVG(pate.fecha_pago - pate.fecha_venc_pago)))
-		FROM
-			pago_atencion pate
-		GROUP BY
-			EXTRACT(YEAR FROM pate.fecha_pago)
-	)
+	pate.fecha_pago-pate.fecha_venc_pago > 13
 GROUP BY
 	pac.pac_run,
 	pac.dv_run,
@@ -255,9 +248,80 @@ GROUP BY
 	pac.amaterno,
 	ate.ate_id,
 	pate.fecha_venc_pago,
-	pate.fecha_pago;
-	
+	pate.fecha_pago
+ORDER BY
+	pate.fecha_venc_pago ASC,
+	pate.fecha_pago - pate.fecha_venc_pago desc;
+
+-- CASO 5
 SELECT
-	ROUND(AVG(pate.fecha_pago - pate.fecha_venc_pago))
+		TO_CHAR(md.med_run, '09G999G999') || '-' || md.dv_run
+		AS "RUN MEDICO",
+	UPPER(
+		md.pnombre || ' ' ||
+		md.snombre || ' ' ||
+		md.apaterno || ' ' ||
+		md.amaterno
+		)
+			AS "NOMBRE MEDICO",
+		COUNT(ate.ate_id)
+			AS "TOTAL ATENCIONES MEDICAS",
+		TO_CHAR(md.sueldo_base, 'L999G999G999')
+			AS "SUELDO BASE",
+		TO_CHAR(ROUND((
+		SELECT
+			(&&ganancias * 0.005) / COUNT(*)
+		FROM
+			(
+			SELECT
+				COUNT(ate.med_run)
+					AS "CANT_ATE"
+			FROM
+				atencion ate
+			WHERE
+				EXTRACT(YEAR FROM SYSDATE) = EXTRACT(YEAR FROM ate.fecha_atencion)
+			HAVING
+				COUNT(ate.ate_id) > 7
+			group by ate.med_run
+			)
+				)
+				)
+				, 'L999G999G999')
+			AS "BONIFICACION POR GANANCIAS",
+	TO_CHAR(ROUND(md.sueldo_base + (
+		SELECT
+			(&ganancias * 0.005) / COUNT(*)
+		FROM
+			(
+			SELECT
+				COUNT(ate.med_run)
+					AS "CANT_ATE"
+			FROM
+				atencion ate
+			WHERE
+				EXTRACT(YEAR FROM SYSDATE) = EXTRACT(YEAR FROM ate.fecha_atencion)
+			HAVING
+				COUNT(ate.ate_id) > 7
+			group by ate.med_run
+			)
+				) ), 'L999G999G999')
+			AS "SUELDO TOTAL"
 FROM
-	pago_atencion pate
+	medico md
+INNER JOIN atencion ate
+	ON (ate.med_run = md.med_run)
+WHERE 
+	EXTRACT(YEAR FROM SYSDATE) = EXTRACT(YEAR FROM ate.fecha_atencion)
+HAVING
+	COUNT(ate.ate_id) > 7
+GROUP BY 
+	md.pnombre,
+	md.snombre,
+	md.apaterno,
+	md.amaterno,
+	md.med_run,
+	md.dv_run,
+	md.sueldo_base
+ORDER BY
+	md.med_run,
+	md.apaterno;
