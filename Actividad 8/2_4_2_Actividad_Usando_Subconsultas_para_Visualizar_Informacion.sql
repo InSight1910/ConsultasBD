@@ -70,22 +70,18 @@ ORDER BY
 
 -- INFORME 2
 SELECT
-    TO_CHAR(pac.pac_run, '09G999G999') || '-' || pac.dv_run 
-        AS "RUN PACIENTE",
+    TO_CHAR(pac.pac_run, '09G999G999') || '-' || pac.dv_run AS "RUN PACIENTE",
     INITCAP(
         pac.pnombre || ' ' || pac.snombre || ' ' || pac.apaterno || ' ' || pac.amaterno
-    ) 
-        AS "NOMBRE PACIENTE",
-    ROUND((MONTHS_BETWEEN(SYSDATE, fecha_nacimiento) / 12)) 
-        AS "EDAD",
+    ) AS "NOMBRE PACIENTE",
+    ROUND((MONTHS_BETWEEN(SYSDATE, fecha_nacimiento) / 12)) AS "EDAD",
     'Le corresponde  un ' || porc.porcentaje_descto || '% de descuento en la primera consulata medica del año ' || (
         EXTRACT(
             YEAR
             FROM
                 SYSDATE
         ) + 1
-    )
-        AS "PORCENTAJE DESCUENTO"
+    ) AS "PORCENTAJE DESCUENTO"
 FROM
     paciente pac
     JOIN porc_descto_3ra_edad porc ON ROUND((MONTHS_BETWEEN(SYSDATE, fecha_nacimiento) / 12)) BETWEEN porc.anno_ini
@@ -118,113 +114,100 @@ WHERE
 
 -- CASO 2
 SELECT
-    es.nombre 
-        AS "ESPECIALIDAD",
-    TO_CHAR(md.med_run, '09G999G999') || '-' || md.dv_run
-        AS "RUT",
+    LOWER(esp.nombre) as "ESPECIALIDAD",
+    TO_CHAR(me.med_run, '09G999G999') || '-' || me.dv_run AS "RUT",
     UPPER(
-        md.pnombre || ' ' || md.snombre || ' ' || md.apaterno || ' ' || md.amaterno
-    ) 
-        AS "MEDICO"
+        me.pnombre ||' '|| me.snombre ||' '|| me.apaterno ||' '|| me.amaterno
+    ) AS "MEDICO"
 FROM
-    medico md
-    INNER JOIN especialidad_medico em ON (em.med_run = md.med_run)
-    INNER JOIN especialidad es ON (es.esp_id = em.esp_id)
+    medico me
+    INNER JOIN especialidad_medico esme ON (me.med_run = esme.med_run)
+    INNER JOIN especialidad esp ON(esme.esp_id = esp.esp_id)
 WHERE
-    es.nombre IN (
-        SELECT
-            es.nombre
-        FROM
-            atencion ate
-            INNER JOIN especialidad_medico em ON (em.med_run = ate.med_run)
-            INNER JOIN especialidad es ON (es.esp_id = em.esp_id)
-        HAVING
-            COUNT(ate.esp_id) < 10
-        GROUP BY
-            ate.esp_id,
-            es.nombre
-    )
+    esp.esp_id IN (SELECT
+                            esp.esp_id
+                            FROM
+                                especialidad esp
+                                LEFT JOIN atencion at ON (esp.esp_id=at.esp_id) AND EXTRACT(YEAR FROM at.fecha_atencion) 
+                                = EXTRACT(YEAR FROM SYSDATE) -1
+                            HAVING
+                                COUNT(at.ate_id) BETWEEN 0 AND 10
+                            GROUP BY
+                                esp.esp_id
+                             )
 ORDER BY
-    "ESPECIALIDAD",
-    "RUT";
-
-SELECT
-	em.med_run,
-	COUNT(md.med_run)
-FROM
-	atencion ate
-	INNER JOIN especialidad_medico em ON (em.med_run = ate.med_run)
-	INNER JOIN medico md ON (md.med_run = em.med_run)
-	INNER JOIN especialidad es ON (es.esp_id = em.esp_id)
-WHERE
-	EXTRACT(YEAR FROM ate.fecha_atencion) = EXTRACT(YEAR FROM SYSDATE) - 1
-GROUP BY
-	em.med_run;
+    "ESPECIALIDAD" ASC,
+    me.apaterno ASC;
 
 -- CASO 3
+DELETE TABLE MEDICOS_SERVICIO_COMUNIDAD;
+
+CREATE TABLE MEDICOS_SERVICIO_COMUNIDAD AS
 SELECT
-    un.nombre
-        AS "UNIDAD",
-    UPPER(
-        md.pnombre || ' ' || md.snombre || ' ' || md.apaterno || ' ' || md.amaterno
-    )
-        AS "MEDICO",
-    md.telefono
-        AS "TELEFONO"
+    uni.nombre AS "UNIDAD",
+    INITCAP(
+        med.pnombre || ' ' || med.snombre || ' ' || med.apaterno || ' ' || med.amaterno
+    ) AS "MEDICO",
+    med.telefono AS "TELEFONO",
+    UPPER(SUBSTR(uni.nombre, 1, 2)) || LOWER(SUBSTR(med.apaterno, -3, 2)) || SUBSTR(med.telefono, -3) || TO_CHAR(med.fecha_contrato, 'ddmm') || '@medicocktk.cl' AS "CORREO_MEDICO",
+    COUNT(at.ate_id) AS "ATENCIONES MEDICAS"
 FROM
-    medico md
-    INNER JOIN unidad un ON (un.uni_id = md.uni_id)
-WHERE
-    md.med_run IN (
+    medico med
+    INNER JOIN unidad uni ON (med.uni_id = uni.uni_id)
+    LEFT OUTER JOIN atencion at ON (
+        at.med_run = med.med_run
+        AND EXTRACT(
+            YEAR
+            FROM
+                at.fecha_atencion
+        ) = EXTRACT(
+            YEAR
+            FROM
+                ADD_MONTHS(SYSDATE, -12)
+        )
+    )
+GROUP BY
+    uni.nombre,
+    med.pnombre,
+    med.snombre,
+    med.apaterno,
+    med.amaterno,
+    med.telefono,
+    med.fecha_contrato
+HAVING
+    COUNT(at.ate_id) < (
         SELECT
-            ate.med_run AS "PAC_RUN"
+            MAX(COUNT(at.ate_id)) AS "AT_MED"
         FROM
-            atencion ate
+            atencion at
         WHERE
             EXTRACT(
                 YEAR
                 FROM
-                    SYSDATE
-            ) -1 = EXTRACT(
+                    at.fecha_atencion
+            ) = EXTRACT(
                 YEAR
                 FROM
-                    ate.fecha_atencion
-            )
-        HAVING
-            COUNT(ate.med_run) < (
-                SELECT
-                    MAX(COUNT(ate.med_run)) AS "PAC_RUN"
-                FROM
-                    atencion ate
-                WHERE
-                    EXTRACT(
-                        YEAR
-                        FROM
-                            SYSDATE
-                    ) -1 = EXTRACT(
-                        YEAR
-                        FROM
-                            ate.fecha_atencion
-                    )
-                GROUP BY
-                    ate.med_run
+                    ADD_MONTHS(SYSDATE, -12)
             )
         GROUP BY
-            ate.med_run
+            at.med_run
     )
 ORDER BY
-    un.nombre,
-    md.apaterno;
+    uni.nombre ASC,
+    med.apaterno ASC;
+
+SELECT
+    *
+FROM
+    MEDICOS_SERVICIO_COMUNIDAD;
 
 -- CASO 4
 -- INFORME 1
 SELECT
-    TO_CHAR(ate.fecha_atencion, 'YYYY/MM')
-        AS "AÑO Y MES",
-    COUNT(ate.ate_id) 
-        AS "TOTAL ATENCIONES",
-    TO_CHAR(SUM(ate.costo), 'L999G999G999')
-        AS "VALOR TOTAL"
+    TO_CHAR(ate.fecha_atencion, 'YYYY/MM') AS "AÑO Y MES",
+    COUNT(ate.ate_id) AS "TOTAL ATENCIONES",
+    TO_CHAR(SUM(ate.costo), 'L999G999G999') AS "VALOR TOTAL"
 FROM
     atencion ate
 WHERE
@@ -246,31 +229,31 @@ ORDER BY
 
 -- INFORME 2
 SELECT
-    TO_CHAR(pac.pac_run, '09G999G999') || '-' || pac.dv_run
-        AS "RUN PACIENTE",
+    TO_CHAR(pac.pac_run, '09G999G999') || '-' || pac.dv_run AS "RUN PACIENTE",
     INITCAP(
         pac.pnombre || ' ' || pac.snombre || ' ' || pac.apaterno || ' ' || pac.amaterno
-    )
-        AS "NOMBRE PACIENTE",
-    ate.ate_id
-        AS "ID ATENCION",
-    TO_CHAR(pate.fecha_venc_pago, 'DD/MM/YYYY')
-        AS "FECHA VENCIMIENTO PAGO",
-    TO_CHAR(pate.fecha_pago, 'DD/MM/YYYY')
-        AS "FECHA PAGO",
-    pate.fecha_pago - pate.fecha_venc_pago
-        AS "DIAS MOROSOS",
+    ) AS "NOMBRE PACIENTE",
+    ate.ate_id AS "ID ATENCION",
+    TO_CHAR(pate.fecha_venc_pago, 'DD/MM/YYYY') AS "FECHA VENCIMIENTO PAGO",
+    TO_CHAR(pate.fecha_pago, 'DD/MM/YYYY') AS "FECHA PAGO",
+    pate.fecha_pago - pate.fecha_venc_pago AS "DIAS MOROSOS",
     TO_CHAR(
         (pate.fecha_pago - pate.fecha_venc_pago) * 2000,
         'L999G999G999'
-    )
-        AS "VALOR MULTA"
+    ) AS "VALOR MULTA"
 FROM
     paciente pac
     INNER JOIN atencion ate ON (ate.pac_run = pac.pac_run)
     INNER JOIN pago_atencion pate ON (pate.ate_id = ate.ate_id)
 WHERE
-    pate.fecha_pago - pate.fecha_venc_pago > 13
+    pate.fecha_pago - pate.fecha_venc_pago > (
+        SELECT
+            ROUND(AVG(fecha_pago - fecha_venc_pago))
+        FROM
+            pago_atencion
+        WHERE
+            fecha_pago - fecha_venc_pago > 0
+    )
 GROUP BY
     pac.pac_run,
     pac.dv_run,
@@ -287,26 +270,21 @@ ORDER BY
 
 -- CASO 5
 SELECT
-    TO_CHAR(md.med_run, '09G999G999') || '-' || md.dv_run
-        AS "RUN MEDICO",
+    TO_CHAR(md.med_run, '09G999G999') || '-' || md.dv_run AS "RUN MEDICO",
     UPPER(
         md.pnombre || ' ' || md.snombre || ' ' || md.apaterno || ' ' || md.amaterno
-    )
-        AS "NOMBRE MEDICO",
-    COUNT(ate.ate_id)
-        AS "TOTAL ATENCIONES MEDICAS",
-    TO_CHAR(md.sueldo_base, 'L999G999G999')
-        AS "SUELDO BASE",
+    ) AS "NOMBRE MEDICO",
+    COUNT(ate.ate_id) AS "TOTAL ATENCIONES MEDICAS",
+    TO_CHAR(md.sueldo_base, 'L999G999G999') AS "SUELDO BASE",
     TO_CHAR(
         ROUND(
             (
                 SELECT
-                    (&& ganancias * 0.005) / COUNT(*)
+                    (& & ganancias * 0.005) / COUNT(*)
                 FROM
                     (
                         SELECT
-                            COUNT(ate.med_run)
-                                AS "CANT_ATE"
+                            COUNT(ate.med_run) AS "CANT_ATE"
                         FROM
                             atencion ate
                         WHERE
@@ -327,18 +305,16 @@ SELECT
             )
         ),
         'L999G999G999'
-    )
-        AS "BONIFICACION POR GANANCIAS",
+    ) AS "BONIFICACION POR GANANCIAS",
     TO_CHAR(
         ROUND(
             md.sueldo_base + (
                 SELECT
-                    (&ganancias * 0.005) / COUNT(*)
+                    (& ganancias * 0.005) / COUNT(*)
                 FROM
                     (
                         SELECT
-                            COUNT(ate.med_run)
-                                AS "CANT_ATE"
+                            COUNT(ate.med_run) AS "CANT_ATE"
                         FROM
                             atencion ate
                         WHERE
@@ -359,8 +335,7 @@ SELECT
             )
         ),
         'L999G999G999'
-    )
-        AS "SUELDO TOTAL"
+    ) AS "SUELDO TOTAL"
 FROM
     medico md
     INNER JOIN atencion ate ON (ate.med_run = md.med_run)
@@ -387,4 +362,25 @@ GROUP BY
 ORDER BY
     md.med_run,
     md.apaterno;
--- undefine ganancias;
+
+undefine ganancias;
+----------------------------------------------------------------
+SELECT
+	esp.esp_id,
+	COUNT(ate.ate_id)
+FROM
+	atencion ate
+INNER JOIN especialidad_medico esm
+	ON (esm.med_run = ate.med_run)
+RIGHT JOIN especialidad esp
+	ON (esm.esp_id = esp.esp_id AND EXTRACT(
+		YEAR
+		FROM
+			ate.fecha_atencion
+	) = EXTRACT(
+		YEAR
+		FROM
+			ADD_MONTHS(SYSDATE, -12)
+	))
+GROUP BY
+	esp.esp_id
